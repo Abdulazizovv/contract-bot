@@ -33,12 +33,17 @@ telegram-bot/
 
 ### 1️⃣ **Clone the Repository**
 ```sh
-git clone <your-repo-url>
+git clone https://github.com/Abdulazizovv/contract-bot.git
 cd telegram-bot
 ```
 
 ### 2️⃣ **Set Up Environment Variables**
 Create a `.env` file inside the project root and add necessary configurations.
+
+```
+cp .env.example .env
+```
+
 
 ### 3️⃣ **Build & Run the Docker Containers**
 ```sh
