@@ -11,7 +11,6 @@ from bot.loader import (
 from aiogram.dispatcher import FSMContext
 from aiogram import Bot
 from datetime import datetime
-from io import BytesIO
 from bot.filters import IsLogged
 from bot.data.config import JSHIR
 
@@ -127,7 +126,7 @@ async def precontract_check(
     if confirm_status == "confirm":
         await call.message.edit_reply_markup()
         await call.message.reply(
-            "Ma'lumotlar tasdiqlandi!\n" "Shartnoma yaratish boshlandi..."
+            "Ma'lumotlar tasdiqlandi!\n" "PDF shartnoma yaratish boshlandi..."
         )
         await didox_process(
             bot=bot,

@@ -129,6 +129,6 @@ dmypy.json
 .idea/*
 .env
 
-/keys
+keys/
 
 service-account.json

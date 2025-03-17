@@ -7,32 +7,20 @@ from bot.filters import IsLogged
 
 # Define the sequence of states
 contract_steps = [
-    "contract:company_owner",
-    "contract:company_name",
+    "contract:company_inn",
+    "contract:company_bank",
     "contract:total_price",
     "contract:monthly_payment",
-    "contract:company_address",
-    "contract:company_account",
-    "contract:company_bank",
-    "contract:company_mfo",
-    "contract:company_inn",
-    "contract:company_oked",
     "contract:company_phone",
     "contract:company_contact_phone",
 ]
 
 # Define the messages for each step
 contract_messages = {
-    "contract:company_owner": "Rahbar ismini kiriting:",
-    "contract:company_name": "Kompaniya nomini kiriting:",
+    "contract:company_inn": "Kompaniya INN raqamini kiriting:",
+    "contract:company_bank": "Kompaniya bankini kiriting:",
     "contract:total_price": "Umumiy narxni kiriting:",
     "contract:monthly_payment": "Oylik to'lovni kiriting:",
-    "contract:company_address": "Kompaniya manzilini kiriting:",
-    "contract:company_account": "Kompaniya hisob raqamini kiriting:",
-    "contract:company_bank": "Kompaniya bankini kiriting:",
-    "contract:company_mfo": "Kompaniya MFOsini kiriting:",
-    "contract:company_inn": "Kompaniya INN raqamini kiriting:",
-    "contract:company_oked": "Kompaniya OKED raqamini kiriting:",
     "contract:company_phone": "Kompaniya telefon raqamini kiriting:",
     "contract:company_contact_phone": "Kompaniya kontakt raqamini kiriting:",
 }
@@ -46,7 +34,7 @@ async def back_to_section(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
 
     # If user is at the first step, cancel the process
-    if current_state == "contract:company_owner":
+    if current_state == "contract:company_inn":
         await state.finish()
         await message.answer(
             "Shartnoma yaratish bekor qilindi!",
