@@ -24,8 +24,8 @@ class EImzoToken:
 
 def get_eimzo_token(data: str = None):
     res: requests.Response = requests.post(
-        # "http://eimzo:8080/generate",
-        "http://127.0.0.1:8080/generate",
+        "http://eimzo:8080/generate",
+        # "http://127.0.0.1:8080/generate",
         json={
             "pfxFilePath": PFX_FILE_PATH,
             "password": PFX_PASSWORD,
