@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  telegram_bot:
+    build:
+      context: .  
+      dockerfile: Dockerfile
+    container_name: telegram_bot
+    env_file:
+      - .env
+    volumes:
+      - ./media:/app/media
+      - ./static:/app/static
+    depends_on:
+      - eimzo
+    restart: unless-stopped
+
+  eimzo:
+    build:
+      context: ./didoxTokenGenerator  # This is the correct path for E-IMZO
+      dockerfile: Dockerfile
+    container_name: eimzo_service
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./didoxTokenGenerator/keys:/app/keys  # Persist keys directory
+      - ./didoxTokenGenerator/lib:/app/lib    # Persist libraries
+    restart: unless-stopped
