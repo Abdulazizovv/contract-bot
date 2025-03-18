@@ -11,8 +11,12 @@ SCOPES = [
     "https://www.googleapis.com/auth/documents",
 ]
 
+
 class GoogleDocsProcessor:
-    def __init__(self, credentials_path: str, template_id: str, destination_folder_id: str):
+    def __init__(
+        self, credentials_path: str, template_id: str, destination_folder_id: str
+    ):
+        print(credentials_path)
         self.creds = service_account.Credentials.from_service_account_file(
             credentials_path, scopes=SCOPES
         )
@@ -28,14 +32,16 @@ class GoogleDocsProcessor:
         )
         response = request.execute()
         return BytesIO(response)
-    
+
     def replace_text_preserve_formatting(self, element, placeholder, replacement):
         """Replace text while preserving formatting in a paragraph or cell."""
         for run in element.runs:
             if placeholder in run.text:
                 run.text = run.text.replace(placeholder, replacement)
 
-    def fill_docx_with_data(self, docx_content: BytesIO, replacements: dict, table_data: list) -> BytesIO:
+    def fill_docx_with_data(
+        self, docx_content: BytesIO, replacements: dict, table_data: list
+    ) -> BytesIO:
         document = Document(docx_content)
         keyword = "{{table}}"
 
@@ -46,14 +52,18 @@ class GoogleDocsProcessor:
                     for key, value in replacements.items():
                         placeholder = f"{{{{{key}}}}}"
                         if placeholder in cell.text:
-                            self.replace_text_preserve_formatting(cell, placeholder, str(value))
+                            self.replace_text_preserve_formatting(
+                                cell, placeholder, str(value)
+                            )
 
         # Replace placeholders in normal paragraphs
         for paragraph in document.paragraphs:
             for key, value in replacements.items():
                 placeholder = f"{{{{{key}}}}}"
                 if placeholder in paragraph.text:
-                    self.replace_text_preserve_formatting(paragraph, placeholder, str(value))
+                    self.replace_text_preserve_formatting(
+                        paragraph, placeholder, str(value)
+                    )
 
         # Insert table if "{{table}}" placeholder exists
         for paragraph in document.paragraphs:
@@ -80,13 +90,13 @@ class GoogleDocsProcessor:
         output.seek(0)
         return output
 
-    
-
     def upload_docx_to_drive(self, docx_content: BytesIO, file_name: str) -> str:
         file_metadata = {
             "name": file_name,
             "mimeType": "application/vnd.google-apps.document",
-            "parents": [self.destination_folder_id],  # Ensures file is saved in the correct folder
+            "parents": [
+                self.destination_folder_id
+            ],  # Ensures file is saved in the correct folder
         }
         media = MediaIoBaseUpload(
             docx_content,
@@ -106,7 +116,14 @@ class GoogleDocsProcessor:
         )
         return request.execute()
 
-    async def process_document(self, bot: Bot, chat_id: str, replacements: dict, file_name: str, table_data: list):
+    async def process_document(
+        self,
+        bot: Bot,
+        chat_id: str,
+        replacements: dict,
+        file_name: str,
+        table_data: list,
+    ):
         await bot.send_message(chat_id, "Template yuklab olinmoqda...")
         docx_content = self.download_template_as_docx()
 
@@ -122,7 +139,9 @@ class GoogleDocsProcessor:
         # await bot.send_message(chat_id, "PDF fayl base64 formatiga o'tkazilmoqda...")
         pdf_base64 = base64.b64encode(pdf_content).decode("utf-8")
 
-        await bot.send_message(chat_id, "Hujjat tayyor! Endi didoxda shartnoma yaratilmoqda ...")
+        await bot.send_message(
+            chat_id, "Hujjat tayyor! Endi didoxda shartnoma yaratilmoqda ..."
+        )
         return pdf_base64, pdf_content
 
 
@@ -146,4 +165,3 @@ class GoogleDocsProcessor:
 #     ]
 
 #     pdf_content = processor.process_document(replacements, file_name, table_data)
-    

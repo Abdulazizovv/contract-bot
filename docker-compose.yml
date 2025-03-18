@@ -3,16 +3,20 @@ version: "3.8"
 services:
   telegram_bot:
     build:
-      context: .  
-      dockerfile: Dockerfile
+      context: .
     container_name: telegram_bot
     env_file:
       - .env
     volumes:
-      - ./media:/app/media
-      - ./static:/app/static
+      - ./config:/usr/src/app/
+      - ./bot:/usr/src/app/bot
+      - ./src:/usr/src/app/src
+      - ./media:/usr/src/app/media
+      - ./static:/usr/src/app/static
+      # - ./requirements.txt:/usr/src/app/requirements.txt
     depends_on:
       - eimzo
+    command: python manage.py app
     restart: unless-stopped
 
   eimzo:

@@ -37,28 +37,28 @@ async def get_company_inn(message: types.Message, state: FSMContext):
             "Bunday INN raqamli kompaniya topilmadi. Qaytadan kiriting:",
             reply_markup=back_kb,
         )
-        return
+        await state.set_state("contract:company_inn")
+    else:
+        await state.update_data(company_name=data["shortName"])
+        await state.update_data(company_address=data["address"])
+        await state.update_data(company_owner=data["director"])
+        await state.update_data(company_mfo=data["mfo"])
+        await state.update_data(company_account=data["account"])
+        await state.update_data(company_oked=data["oked"])
+        await state.update_data(company_inn=data["tin"])
 
-    await state.update_data(company_name=data["shortName"])
-    await state.update_data(company_address=data["address"])
-    await state.update_data(company_owner=data["director"])
-    await state.update_data(company_mfo=data["mfo"])
-    await state.update_data(company_account=data["account"])
-    await state.update_data(company_oked=data["oked"])
-    await state.update_data(company_inn=data["tin"])
-
-    await message.answer(
-        "INN bo'yicha topilgan ma'lumotlar\n\n"
-        f"<b>Kompaniya:</b> {data['shortName']}\n"
-        f"<b>Rahbar:</b> {data['director']}\n"
-        f"<b>Manzil:</b> {data['shortName']}\n"
-        f"<b>Hisob raqam:</b> {data['account']}\n"
-        f"<b>MFO:</b> {data['mfo']}\n"
-        f"<b>INN:</b> {data['tin']}\n"
-        f"<b>OKED:</b> {data['oked']}\n",
-        reply_markup=submit_inn_kb(),
-    )
-    await state.set_state("contract:submit_inn")
+        await message.answer(
+            "INN bo'yicha topilgan ma'lumotlar\n\n"
+            f"<b>Kompaniya:</b> {data['shortName']}\n"
+            f"<b>Rahbar:</b> {data['director']}\n"
+            f"<b>Manzil:</b> {data['shortName']}\n"
+            f"<b>Hisob raqam:</b> {data['account']}\n"
+            f"<b>MFO:</b> {data['mfo']}\n"
+            f"<b>INN:</b> {data['tin']}\n"
+            f"<b>OKED:</b> {data['oked']}\n",
+            reply_markup=submit_inn_kb(),
+        )
+        await state.set_state("contract:submit_inn")
 
 
 @dp.message_handler(IsLogged(), text="Davom etish➡️", state="contract:submit_inn")
@@ -135,7 +135,7 @@ async def get_company_bank(message: types.Message, state: FSMContext):
     await state.update_data(company_bank=company_bank)
     await message.answer(
         "Umumiy narxni kiriting:\n"
-        "<i>Masalan, <code>100000 ( сто тысяч сум )</code></i>",
+        "<i>Masalan, <code>1800000 ( один миллион восемьсот тысяч сум )</code></i>",
         reply_markup=back_kb,
         parse_mode="HTML",
     )

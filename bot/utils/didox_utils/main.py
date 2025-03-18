@@ -7,7 +7,7 @@ from datetime import datetime
 didox = DidoxManager.new()
 
 # Google Docs orqali PDF generatsiya qilish uchun kerakli ma'lumotlar
-credentials_path = "service-account.json"
+credentials_path = "src/service-account.json"
 template_id = "1pRNYL7ITxcdYWfr8nO2JWSqGCYjr25fhu1lA9QzG8A8"
 destination_folder_id = "1aUC2DkkYgmDmX3uXNAIj6KGKej5izOKn"
 
