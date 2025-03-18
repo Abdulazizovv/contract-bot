@@ -134,3 +134,4 @@ keys/
 service-account.json
 
 /media/
+/postgres
