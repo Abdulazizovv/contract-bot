@@ -28,6 +28,12 @@ class GoogleDocsProcessor:
         )
         response = request.execute()
         return BytesIO(response)
+    
+    def replace_text_preserve_formatting(self, element, placeholder, replacement):
+        """Replace text while preserving formatting in a paragraph or cell."""
+        for run in element.runs:
+            if placeholder in run.text:
+                run.text = run.text.replace(placeholder, replacement)
 
     def fill_docx_with_data(self, docx_content: BytesIO, replacements: dict, table_data: list) -> BytesIO:
         document = Document(docx_content)
@@ -40,14 +46,14 @@ class GoogleDocsProcessor:
                     for key, value in replacements.items():
                         placeholder = f"{{{{{key}}}}}"
                         if placeholder in cell.text:
-                            cell.text = cell.text.replace(placeholder, str(value))
+                            self.replace_text_preserve_formatting(cell, placeholder, str(value))
 
         # Replace placeholders in normal paragraphs
         for paragraph in document.paragraphs:
             for key, value in replacements.items():
                 placeholder = f"{{{{{key}}}}}"
                 if placeholder in paragraph.text:
-                    paragraph.text = paragraph.text.replace(placeholder, str(value))
+                    self.replace_text_preserve_formatting(paragraph, placeholder, str(value))
 
         # Insert table if "{{table}}" placeholder exists
         for paragraph in document.paragraphs:
@@ -73,6 +79,8 @@ class GoogleDocsProcessor:
         document.save(output)
         output.seek(0)
         return output
+
+    
 
     def upload_docx_to_drive(self, docx_content: BytesIO, file_name: str) -> str:
         file_metadata = {

@@ -2,10 +2,9 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from bot.loader import dp
 from bot.keyboards.inline import check_contract_kb
-from bot.keyboards.default import back_kb, monthly_payment_keyboard
+from bot.keyboards.default import back_kb, monthly_payment_keyboard, submit_inn_kb
 from bot.filters import IsLogged
 from bot.utils import get_informations_via_inn
-from bot.keyboards.inline import submit_inn_keyboard, submit_inn_callback
 
 
 @dp.message_handler(IsLogged(), text="📝 Shartnoma yuborish", state="*")
@@ -57,32 +56,47 @@ async def get_company_inn(message: types.Message, state: FSMContext):
         f"<b>MFO:</b> {data['mfo']}\n"
         f"<b>INN:</b> {data['tin']}\n"
         f"<b>OKED:</b> {data['oked']}\n",
-        reply_markup=submit_inn_keyboard(),
+        reply_markup=submit_inn_kb(),
     )
     await state.set_state("contract:submit_inn")
 
 
-@dp.callback_query_handler(
-    IsLogged(), submit_inn_callback.filter(action="submit"), state="contract:submit_inn"
-)
-async def submit_inn_datas(
-    call: types.CallbackQuery, callback_data: dict, state: FSMContext
-):
-    await call.message.edit_reply_markup()
-    await call.message.answer("Kompaniya bank nomini kiriting:", reply_markup=back_kb)
+@dp.message_handler(IsLogged(), text="Davom etish➡️", state="contract:submit_inn")
+async def submit_inn_datas(message: types.Message, state: FSMContext):
+    await message.answer("Kompaniya bank nomini kiriting:", reply_markup=back_kb)
     await state.set_state("contract:company_bank")
 
 
-@dp.callback_query_handler(
-    IsLogged(), submit_inn_callback.filter(action="edit_hr"), state="contract:submit_inn"
-)
-async def edit_hr(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    await call.message.edit_reply_markup()
-    await call.message.answer(
+@dp.message_handler(IsLogged(), text="Bank ma'lumotlarini qo'lda kiritish", state="contract:submit_inn")
+async def edit_hr(message: types.Message, state: FSMContext):
+    await message.answer(
         "Kompaniya hisob raqamini kiriting:", reply_markup=back_kb
     )
     await state.set_state("contract:company_account")
     await state.update_data(mode="hand")
+
+
+# @dp.callback_query_handler(
+#     IsLogged(), submit_inn_callback.filter(action="submit"), state="contract:submit_inn"
+# )
+# async def submit_inn_datas(
+#     call: types.CallbackQuery, callback_data: dict, state: FSMContext
+# ):
+#     await call.message.edit_reply_markup()
+#     await call.message.answer("Kompaniya bank nomini kiriting:", reply_markup=back_kb)
+#     await state.set_state("contract:company_bank")
+
+
+# @dp.callback_query_handler(
+#     IsLogged(), submit_inn_callback.filter(action="edit_hr"), state="contract:submit_inn"
+# )
+# async def edit_hr(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+#     await call.message.edit_reply_markup()
+#     await call.message.answer(
+#         "Kompaniya hisob raqamini kiriting:", reply_markup=back_kb
+#     )
+#     await state.set_state("contract:company_account")
+#     await state.update_data(mode="hand")
 
 
 @dp.message_handler(state="contract:company_account")

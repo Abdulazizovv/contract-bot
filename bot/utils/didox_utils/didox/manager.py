@@ -9,10 +9,10 @@ from datetime import datetime
 
 load_dotenv()
 
-PFX_FILE_PATH = "keys/DS522050369100720001.pfx"
+PFX_FILE_PATH = os.getenv("PFX_FILE_PATH")
 PFX_PASSWORD = os.getenv("PFX_PASSWORD")
-ALIAS ="cn=abdulazizov ulug‘bek murotali o‘g‘li,name=ulug‘bek,surname=abdulazizov,l=farg`ona shahri,st=farg`ona viloyati,c=uz,uid=638131851,1.2.860.3.16.1.2=52205036910072,serialnumber=785d0338,validfrom=2024.05.01 17:49:48,validto=2026.05.01 17:49:48"
-JSHIR = "638131851"
+ALIAS = os.getenv("ALIAS")
+JSHIR = os.getenv("JSHIR")
 
 T = TypeVar("T")
 
