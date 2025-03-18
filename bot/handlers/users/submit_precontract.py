@@ -35,12 +35,12 @@ async def didox_process(bot: Bot, chat_id: str, replacements: dict, file_name: s
             "company_mfo": replacements["company_mfo"],
             "company_inn": replacements["company_inn"],
             "company_oked": replacements["company_oked"],
-            "company_phone": replacements["company_phone"]
+            "company_phone": replacements["company_phone"],
         },
     )
     replacements["contact_phone"] = replacements["company_phone"]
     replacements["contract_number"] = contract_number
-    
+
     base64_pdf, pdf_content = await processor.process_document(
         bot=bot,
         chat_id=chat_id,
@@ -48,8 +48,6 @@ async def didox_process(bot: Bot, chat_id: str, replacements: dict, file_name: s
         file_name=file_name,
         table_data=table_data,
     )
-    
-
 
     didox_response = await didox.create_document(
         doc_type="000",  # 000 - Erkin shartnoma
@@ -139,6 +137,15 @@ async def precontract_check(
     elif confirm_status == "cancel":
         await call.message.edit_reply_markup()
         await call.message.reply(
-            "Ma'lumotlar tasdiqlanmadi!\n" "Shartnoma yaratish bekor qilindi..."
+            "Ma'lumotlar tasdiqlanmadi!\n" "Shartnoma yaratish bekor qilindi...",
+            reply_markup=types.ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        types.KeyboardButton(text="📝 Shartnoma yuborish"),
+                    ],
+                    [types.KeyboardButton(text="⛔️ Chiqish")],
+                ],
+                resize_keyboard=True,
+            ),
         )
     await state.finish()
