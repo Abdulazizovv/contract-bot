@@ -6,7 +6,7 @@ import logging
 
 
 @dp.callback_query_handler(
-    IsLogged(), sign_contract_cb.filter(action="sign_contract"), state="*"
+    IsLogged(), sign_contract_cb.filter(), state="*"
 )
 async def sign_contract(call: types.CallbackQuery, callback_data: dict):
     doc_id = callback_data["doc_id"]

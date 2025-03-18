@@ -2,9 +2,10 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from bot.loader import dp
 from bot.keyboards.inline import check_contract_kb
-from bot.keyboards.default import back_kb
+from bot.keyboards.default import back_kb, monthly_payment_keyboard
 from bot.filters import IsLogged
 from bot.utils import get_informations_via_inn
+from bot.keyboards.inline import submit_inn_keyboard, submit_inn_callback
 
 
 @dp.message_handler(IsLogged(), text="📝 Shartnoma yuborish", state="*")
@@ -16,12 +17,27 @@ async def contract(message: types.Message, state: FSMContext):
     await state.update_data(section="start")
 
 
+@dp.message_handler(
+    IsLogged(),
+    content_types=[types.ContentType.PHOTO, types.ContentType.DOCUMENT],
+    state="contract:company_inn",
+)
+async def error_inn(message: types.Message, state: FSMContext):
+    await message.answer(
+        "INN raqamini matn shaklida kiriting. Qaytadan kiriting:", reply_markup=back_kb
+    )
+    await state.set_state("contract:company_inn")
+
+
 @dp.message_handler(IsLogged(), state="contract:company_inn")
 async def get_company_inn(message: types.Message, state: FSMContext):
     company_inn = message.text
     data = get_informations_via_inn(company_inn)
     if data is None:
-        await message.answer("Bunday INN raqamli kompaniya topilmadi. Qaytadan kiriting:", reply_markup=back_kb)
+        await message.answer(
+            "Bunday INN raqamli kompaniya topilmadi. Qaytadan kiriting:",
+            reply_markup=back_kb,
+        )
         return
 
     await state.update_data(company_name=data["shortName"])
@@ -32,15 +48,83 @@ async def get_company_inn(message: types.Message, state: FSMContext):
     await state.update_data(company_oked=data["oked"])
     await state.update_data(company_inn=data["tin"])
 
-    await message.answer("Kompaniya bankini kiriting:", reply_markup=back_kb)
+    await message.answer(
+        "INN bo'yicha topilgan ma'lumotlar\n\n"
+        f"<b>Kompaniya:</b> {data['shortName']}\n"
+        f"<b>Rahbar:</b> {data['director']}\n"
+        f"<b>Manzil:</b> {data['shortName']}\n"
+        f"<b>Hisob raqam:</b> {data['account']}\n"
+        f"<b>MFO:</b> {data['mfo']}\n"
+        f"<b>INN:</b> {data['tin']}\n"
+        f"<b>OKED:</b> {data['oked']}\n",
+        reply_markup=submit_inn_keyboard(),
+    )
+    await state.set_state("contract:submit_inn")
+
+
+@dp.callback_query_handler(
+    IsLogged(), submit_inn_callback.filter(action="submit"), state="contract:submit_inn"
+)
+async def submit_inn_datas(
+    call: types.CallbackQuery, callback_data: dict, state: FSMContext
+):
+    await call.message.edit_reply_markup()
+    await call.message.answer("Kompaniya bank nomini kiriting:", reply_markup=back_kb)
     await state.set_state("contract:company_bank")
+
+
+@dp.callback_query_handler(
+    IsLogged(), submit_inn_callback.filter(action="edit_hr"), state="contract:submit_inn"
+)
+async def edit_hr(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    await call.message.edit_reply_markup()
+    await call.message.answer(
+        "Kompaniya hisob raqamini kiriting:", reply_markup=back_kb
+    )
+    await state.set_state("contract:company_account")
+    await state.update_data(mode="hand")
+
+
+@dp.message_handler(state="contract:company_account")
+async def get_company_account(message: types.Message, state: FSMContext):
+    company_account = message.text
+    await state.update_data(company_account=company_account)
+    await message.answer("Kompaniya bank MFOsini kiriting:", reply_markup=back_kb)
+    await state.set_state("contract:company_mfo")
+    await state.update_data(section="company_account")
+    await state.update_data(message="Kompaniya hisob raqamini kiriting:")
+
+
+@dp.message_handler(IsLogged(), state="contract:company_mfo")
+async def get_company_mfo(message: types.Message, state: FSMContext):
+    company_mfo = message.text
+    await state.update_data(company_mfo=company_mfo)
+    await message.answer("Kompaniya OKED raqamini kiriting:", reply_markup=back_kb)
+    await state.set_state("contract:company_oked")
+    await state.update_data(section="company_mfo")
+    await state.update_data(message="Kompaniya bank MFOsini kiriting:")
+
+
+@dp.message_handler(IsLogged(), state="contract:company_oked")
+async def get_company_oked(message: types.Message, state: FSMContext):
+    company_oked = message.text
+    await state.update_data(company_oked=company_oked)
+    await message.answer("Kompaniya bank nomini kiriting:", reply_markup=back_kb)
+    await state.set_state("contract:company_bank")
+    await state.update_data(section="company_oked")
+    await state.update_data(message="Kompaniya OKED raqamini kiriting:")
 
 
 @dp.message_handler(IsLogged(), state="contract:company_bank")
 async def get_company_bank(message: types.Message, state: FSMContext):
     company_bank = message.text
     await state.update_data(company_bank=company_bank)
-    await message.answer("Umumiy narxni kiriting:", reply_markup=back_kb)
+    await message.answer(
+        "Umumiy narxni kiriting:\n"
+        "<i>Masalan, <code>100000 ( сто тысяч сум )</code></i>",
+        reply_markup=back_kb,
+        parse_mode="HTML",
+    )
     await state.set_state("contract:total_price")
     await state.update_data(section="company_bank")
     await state.update_data(message="Kompaniya bankini kiriting:")
@@ -50,7 +134,9 @@ async def get_company_bank(message: types.Message, state: FSMContext):
 async def get_total_price(message: types.Message, state: FSMContext):
     total_price = message.text
     await state.update_data(total_price=total_price)
-    await message.answer("Oylik to'lovni kiriting:", reply_markup=back_kb)
+    await message.answer(
+        "Oylik to'lovni kiriting:\n", reply_markup=monthly_payment_keyboard()
+    )
     await state.set_state("contract:monthly_payment")
     await state.update_data(section="total_price")
     await state.update_data(message="Umumiy narxni kiriting:")
@@ -70,18 +156,6 @@ async def get_monthly_payment(message: types.Message, state: FSMContext):
 async def get_company_phone(message: types.Message, state: FSMContext):
     company_phone = message.text
     await state.update_data(company_phone=company_phone)
-    await message.answer("Kompaniya kontakt raqamini kiriting:", reply_markup=back_kb)
-    await state.set_state("contract:company_contact_phone")
-    await state.update_data(section="company_phone")
-    await state.update_data(message="Kompaniya telefon raqamini kiriting:")
-
-
-@dp.message_handler(IsLogged(), state="contract:company_contact_phone")
-async def get_company_contact_phone(message: types.Message, state: FSMContext):
-    await state.update_data(section="company_contact_phone")
-    await state.update_data(message="Kompaniya kontakt raqamini kiriting:")
-    company_contact_phone = message.text
-    await state.update_data(company_contact_phone=company_contact_phone)
     data = await state.get_data()
     await message.answer(
         "Ma'lumotlar qabul qilindi. Ma'lumotlarni tekshiring va tasdiqlang.\n\n"
@@ -95,20 +169,47 @@ async def get_company_contact_phone(message: types.Message, state: FSMContext):
         f"<b>MFO:</b> {data['company_mfo']}\n"
         f"<b>INN:</b> {data['company_inn']}\n"
         f"<b>OKED:</b> {data['company_oked']}\n"
-        f"<b>Telefon:</b> {data['company_phone']}\n"
-        f"<b>Kontakt:</b> {data['company_contact_phone']}\n",
+        f"<b>Telefon:</b> {data['company_phone']}\n",
         reply_markup=check_contract_kb,
     )
 
     await state.set_state("contract:preconfirm")
+    # await state.update_data(section="company_phone")
+    # await state.update_data(message="Kompaniya telefon raqamini kiriting:")
 
 
-    # await state.update_data(data=data)
-    # await message.answer("Rahbar ismini kiriting:", reply_markup=back_kb)
-    # await state.set_state("contract:company_owner")
-    # await state.update_data(company_inn=company_inn)
-    # await state.update_data(message="Rahbar ismini kiriting:")
+# @dp.message_handler(IsLogged(), state="contract:company_contact_phone")
+# async def get_company_contact_phone(message: types.Message, state: FSMContext):
+#     await state.update_data(section="company_contact_phone")
+#     await state.update_data(message="Kompaniya kontakt raqamini kiriting:")
+#     company_contact_phone = message.text
+#     await state.update_data(company_contact_phone=company_contact_phone)
+#     data = await state.get_data()
+#     await message.answer(
+#         "Ma'lumotlar qabul qilindi. Ma'lumotlarni tekshiring va tasdiqlang.\n\n"
+#         f"<b>Rahbar:</b> {data['company_owner']}\n"
+#         f"<b>Kompaniya:</b> {data['company_name']}\n"
+#         f"<b>Umumiy narx:</b> {data['total_price']}\n"
+#         f"<b>Oylik to'lov:</b> {data['monthly_payment']}\n"
+#         f"<b>Manzil:</b> {data['company_address']}\n"
+#         f"<b>Hisob raqam:</b> {data['company_account']}\n"
+#         f"<b>Bank:</b> {data['company_bank']}\n"
+#         f"<b>MFO:</b> {data['company_mfo']}\n"
+#         f"<b>INN:</b> {data['company_inn']}\n"
+#         f"<b>OKED:</b> {data['company_oked']}\n"
+#         f"<b>Telefon:</b> {data['company_phone']}\n"
+#         f"<b>Kontakt:</b> {data['company_contact_phone']}\n",
+#         reply_markup=check_contract_kb,
+#     )
 
+#     await state.set_state("contract:preconfirm")
+
+
+# await state.update_data(data=data)
+# await message.answer("Rahbar ismini kiriting:", reply_markup=back_kb)
+# await state.set_state("contract:company_owner")
+# await state.update_data(company_inn=company_inn)
+# await state.update_data(message="Rahbar ismini kiriting:")
 
 
 # async def send_contract(message: types.Message, state: FSMContext):

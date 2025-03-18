@@ -78,7 +78,6 @@ class DBcommands:
             "company_oked": str,
             "company_phone": str,
             "contact_phone": str,
-            "pdf_file": bytes
         }
 
         """
@@ -98,12 +97,20 @@ class DBcommands:
                 company_inn=data['company_inn'],
                 company_oked=data['company_oked'],
                 company_phone=data['company_phone'],
-                contact_phone=data['contact_phone'],
             )
-            contract.pdf_file.save(f'{data["company_name"]}_N{contract.id}-contract.pdf', ContentFile(data['pdf_file']), save=True)
-            return contract.id
+            return contract.contract_number, contract.id
         except BotUser.DoesNotExist:
             logging.error(f"User with id {user_id} do not found while creating a contract")
+            return False
+    
+    @sync_to_async
+    def add_pdf_file_to_contract(self, contract_id: int, pdf_file: bytes):
+        try:
+            contract = Contract.objects.get(id=contract_id)
+            contract.pdf_file.save(f'{contract.company_name}_N{contract.id}-contract.pdf', ContentFile(pdf_file), save=True)
+            return True
+        except Contract.DoesNotExist:
+            logging.error(f"Contract with id {contract_id} do not found while adding pdf file")
             return False
     
 

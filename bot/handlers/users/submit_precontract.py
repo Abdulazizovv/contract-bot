@@ -22,15 +22,7 @@ async def didox_process(bot: Bot, chat_id: str, replacements: dict, file_name: s
         ["Column1 Row2", "Column2 Row2", "Column3 Row2"],
     ]
 
-    base64_pdf, pdf_content = await processor.process_document(
-        bot=bot,
-        chat_id=chat_id,
-        replacements=replacements,
-        file_name=file_name,
-        table_data=table_data,
-    )
-
-    contract_id = await db.create_contract(
+    contract_number, contract_id = await db.create_contract(
         user_id=chat_id,
         data={
             "company_name": replacements["company_name"],
@@ -43,23 +35,33 @@ async def didox_process(bot: Bot, chat_id: str, replacements: dict, file_name: s
             "company_mfo": replacements["company_mfo"],
             "company_inn": replacements["company_inn"],
             "company_oked": replacements["company_oked"],
-            "company_phone": replacements["company_phone"],
-            "contact_phone": replacements["contact_phone"],
-            "pdf_file": pdf_content,
+            "company_phone": replacements["company_phone"]
         },
     )
+    replacements["contact_phone"] = replacements["company_phone"]
+    replacements["contract_number"] = contract_number
+    
+    base64_pdf, pdf_content = await processor.process_document(
+        bot=bot,
+        chat_id=chat_id,
+        replacements=replacements,
+        file_name=file_name,
+        table_data=table_data,
+    )
+    
+
 
     didox_response = await didox.create_document(
         doc_type="000",  # 000 - Erkin shartnoma
         data={
             "data": {
                 "Document": {
-                    "DocumentNo": f"{contract_id}",
+                    "DocumentNo": f"{contract_number}",
                     "DocumentDate": replacements["date"],
                     "DocumentName": f"{replacements['company_name']}- OOO \"Sector Soft\" shartnomasi",
                 },
                 "ContractDoc": {
-                    "ContractNo": f"{contract_id}",
+                    "ContractNo": f"{contract_number}",
                     "ContractDate": replacements["date"],
                 },
                 "SellerTin": str(JSHIR),
@@ -85,6 +87,7 @@ async def didox_process(bot: Bot, chat_id: str, replacements: dict, file_name: s
         if contract_pdf_file_response.success:
             pdf_file = contract_pdf_file_response.data
             pdf_file.name = f"{file_name}.pdf"
+            await db.add_pdf_file_to_contract(contract_id, pdf_content)
             await bot.send_document(chat_id=chat_id, document=pdf_file)
             await bot.send_message(
                 chat_id,
@@ -120,7 +123,6 @@ async def precontract_check(
         "company_inn": data["company_inn"],
         "company_oked": data["company_oked"],
         "company_phone": data["company_phone"],
-        "contact_phone": data["company_contact_phone"],
     }
 
     if confirm_status == "confirm":
